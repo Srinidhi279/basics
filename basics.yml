@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: EC2-Loadbalancer
+Resources:
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+      - Key: Name
+        Value: sampleVPC  
+
+  myPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: "us-west-1a"
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+      - Key: Name
+        Value: PubSub 
+
+  myPrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: "us-west-1c"
+      MapPublicIpOnLaunch: 'false'
+      Tags:
+      - Key: Name
+        Value: PvtSub             
+
+  myInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: sampleIGW
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: myVPC
+      InternetGatewayId:
+        Ref: myInternetGateway
+
+  myRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: myVPC
+      Tags:
+      - Key: Name
+        Value: my-PUB-RT
+
+  myRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+       RouteTableId:
+         Ref: myRouteTable
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId:
+         Ref: myInternetGateway
+
+  mySubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: myPublicSubnet
+      RouteTableId:
+        Ref: myRouteTable
